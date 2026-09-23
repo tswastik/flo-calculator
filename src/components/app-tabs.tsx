@@ -27,6 +27,9 @@ export default function AppTabs() {
           <TabTrigger name="faq" href="/faq" asChild>
             <TabButton icon={{ ios: 'questionmark.circle', android: 'help', web: 'help' }}>FAQ</TabButton>
           </TabTrigger>
+          <TabTrigger name="profile" href="/profile" asChild>
+            <TabButton icon={{ ios: 'person.circle', android: 'person', web: 'person' }}>Profile</TabButton>
+          </TabTrigger>
         </CustomTabList>
       </TabList>
     </Tabs>

@@ -4,16 +4,20 @@ import { SymbolView } from 'expo-symbols';
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { RegularityBadge } from '@/components/regularity-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { computeAverageCycleLength, formatLongDate } from '@/lib/cycleMath';
+import { annotateHistoryRegularity, computeAverageCycleLength, formatLongDate } from '@/lib/cycleMath';
 import { deleteCycleEntry, getHistory } from '@/lib/storage';
 import { CycleEntry } from '@/lib/types';
 import { useTheme } from '@/hooks/use-theme';
+import { useUser } from '@/hooks/use-user-store';
 
 export default function HistoryScreen() {
   const theme = useTheme();
+  const { activeUser } = useUser();
+  const userId = activeUser?.id;
   const safeAreaInsets = useSafeAreaInsets();
   const insets = {
     ...safeAreaInsets,
@@ -25,19 +29,22 @@ export default function HistoryScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      getHistory().then((history) => {
+      if (!userId) return;
+      setLoaded(false);
+      getHistory(userId).then((history) => {
         setEntries(history);
         setLoaded(true);
       });
-    }, [])
+    }, [userId])
   );
 
   const handleDelete = async (id: string) => {
-    const next = await deleteCycleEntry(id);
+    if (!userId) return;
+    const next = await deleteCycleEntry(userId, id);
     setEntries(next);
   };
 
-  const sorted = [...entries].sort(
+  const annotated = annotateHistoryRegularity(entries).sort(
     (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
   );
   const averageCycleLength = computeAverageCycleLength(entries);
@@ -63,8 +70,8 @@ export default function HistoryScreen() {
       <ThemedView style={styles.container}>
         <ThemedText type="subtitle">Cycle history</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Cycles you save from the calculator appear here. Log a couple to get an automatically
-          computed average cycle length.
+          Cycles you save from the calculator appear here. Once a cycle has an earlier one to
+          compare against, it&apos;s marked Regular or Irregular based on its length.
         </ThemedText>
 
         {averageCycleLength && (
@@ -76,7 +83,7 @@ export default function HistoryScreen() {
           </ThemedView>
         )}
 
-        {loaded && sorted.length === 0 && (
+        {loaded && annotated.length === 0 && (
           <ThemedView type="backgroundElement" style={styles.emptyState}>
             <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
               No cycles saved yet. Calculate a cycle and tap &quot;Save this cycle&quot; to start
@@ -86,13 +93,15 @@ export default function HistoryScreen() {
         )}
 
         <View style={styles.list}>
-          {sorted.map((entry) => (
+          {annotated.map((entry) => (
             <ThemedView key={entry.id} type="card" style={[styles.row, { borderColor: theme.border }]}>
-              <View>
+              <View style={styles.rowText}>
                 <ThemedText type="smallBold">{formatLongDate(new Date(entry.startDate))}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
                   Lasted {entry.periodLength} {entry.periodLength === 1 ? 'day' : 'days'}
+                  {entry.cycleLength !== null ? ` · ${entry.cycleLength}-day cycle` : ''}
                 </ThemedText>
+                <RegularityBadge isIrregular={entry.isIrregular} />
               </View>
               <Pressable
                 onPress={() => handleDelete(entry.id)}
@@ -149,6 +158,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: Spacing.four,
     padding: Spacing.four,
+    gap: Spacing.three,
+  },
+  rowText: {
+    flex: 1,
+    gap: Spacing.two,
   },
   pressed: {
     opacity: 0.6,

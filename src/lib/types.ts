@@ -5,6 +5,12 @@ export type CycleEntry = {
   periodLength: number;
 };
 
+export type UserProfile = {
+  id: string;
+  name: string;
+  createdAt: string;
+};
+
 export type CalculatorResult = {
   lastPeriodStart: Date;
   periodLength: number;

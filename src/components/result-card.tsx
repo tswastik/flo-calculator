@@ -7,12 +7,23 @@ import { useTheme } from '@/hooks/use-theme';
 
 type Props = {
   label: string;
-  month: string;
+  /** Omit (or pass '') when `days` already spells out its own month(s), e.g. a range spanning two months */
+  month?: string;
   days: string;
+  daysFontSize: { fontSize: number; lineHeight: number };
   style?: object;
 };
 
-export function ResultCard({ label, month, days, style }: Props) {
+/** Size that fits the longest of a set of "days" strings, so sibling cards render at a matching scale. */
+export function fontSizeForDays(...values: string[]): { fontSize: number; lineHeight: number } {
+  const longest = Math.max(...values.map((value) => value.length));
+  if (longest <= 2) return { fontSize: 40, lineHeight: 46 };
+  if (longest <= 5) return { fontSize: 32, lineHeight: 38 };
+  if (longest <= 8) return { fontSize: 24, lineHeight: 29 };
+  return { fontSize: 18, lineHeight: 22 };
+}
+
+export function ResultCard({ label, month, days, daysFontSize, style }: Props) {
   const theme = useTheme();
 
   return (
@@ -21,10 +32,14 @@ export function ResultCard({ label, month, days, style }: Props) {
         {label}
       </ThemedText>
       <View style={styles.dateBlock}>
-        <ThemedText type="smallBold" style={{ color: theme.primary }}>
-          {month}
+        {!!month && (
+          <ThemedText type="smallBold" style={{ color: theme.primary }}>
+            {month}
+          </ThemedText>
+        )}
+        <ThemedText style={[styles.days, daysFontSize]} numberOfLines={2}>
+          {days}
         </ThemedText>
-        <ThemedText style={styles.days}>{days}</ThemedText>
       </View>
     </ThemedView>
   );
@@ -44,10 +59,10 @@ const styles = StyleSheet.create({
   },
   dateBlock: {
     alignItems: 'center',
+    width: '100%',
   },
   days: {
-    fontSize: 40,
     fontWeight: '800',
-    lineHeight: 46,
+    textAlign: 'center',
   },
 });

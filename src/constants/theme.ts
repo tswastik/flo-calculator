@@ -22,6 +22,10 @@ export const Colors = {
     period: '#F0506B',
     diagramBackground: '#E5D9F2',
     diagramTrack: '#FFFFFF',
+    regular: '#1E9E8C',
+    regularSoft: '#E1F5F1',
+    irregular: '#D6336C',
+    irregularSoft: '#FBE1EA',
   },
   dark: {
     text: '#ffffff',
@@ -37,6 +41,10 @@ export const Colors = {
     period: '#F0506B',
     diagramBackground: '#2B2138',
     diagramTrack: '#3A3143',
+    regular: '#2BBBA6',
+    regularSoft: '#183430',
+    irregular: '#F0679A',
+    irregularSoft: '#3A2029',
   },
 } as const;
 

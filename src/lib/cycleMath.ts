@@ -81,6 +81,30 @@ export function isLikelyIrregular(periodLength: number, cycleLength: number): bo
   );
 }
 
+export type AnnotatedCycleEntry = CycleEntry & {
+  /** Days since the previous logged period; null when there's no earlier entry to compare against. */
+  cycleLength: number | null;
+  /** null when cycleLength is unknown (the earliest logged entry) */
+  isIrregular: boolean | null;
+};
+
+/** Sorted oldest-first, each entry's cycle length measured against the one logged before it. */
+export function annotateHistoryRegularity(history: CycleEntry[]): AnnotatedCycleEntry[] {
+  const sorted = [...history].sort(
+    (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+  );
+
+  return sorted.map((entry, index) => {
+    if (index === 0) return { ...entry, cycleLength: null, isIrregular: null };
+
+    const cycleLength = daysBetween(
+      new Date(sorted[index - 1].startDate),
+      new Date(entry.startDate)
+    );
+    return { ...entry, cycleLength, isIrregular: isLikelyIrregular(entry.periodLength, cycleLength) };
+  });
+}
+
 const MONTH_ABBREVIATIONS = [
   'JAN',
   'FEB',
